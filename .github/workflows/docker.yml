@@ -1,0 +1,57 @@
+name: docker
+
+# build -> run -> test en cada Pull Request; además push al registry al fusionar en main
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-test-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Nombre de la imagen (en minúsculas)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: docker build -t tienda-online:test .
+
+      - name: Run
+        run: docker run -d --name tienda -p 8000:8000 tienda-online:test
+
+      - name: Test
+        run: |
+          for i in $(seq 1 20); do
+            curl -fsS http://localhost:8000/health && break
+            sleep 1
+          done
+          curl -fsS http://localhost:8000/health | grep -q '"ok"'
+          curl -fsS http://localhost:8000/usuarios | grep -q 'admin@tienda.com'
+          curl -fsS -X POST http://localhost:8000/productos \
+            -H 'Content-Type: application/json' \
+            -d '{"tipo":"generico","nombre":"Taza","precio":7.5,"stock":5}' | grep -q 'Taza'
+          docker logs tienda
+
+      - name: Login en GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        if: github.event_name != 'pull_request'
+        run: |
+          docker tag tienda-online:test "$IMAGE:latest"
+          docker tag tienda-online:test "$IMAGE:${GITHUB_SHA::7}"
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${GITHUB_SHA::7}"

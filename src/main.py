@@ -36,6 +36,12 @@ def get_tienda() -> TiendaService:
     return tienda
 
 
+#Estado del servicio (lo usa el HEALTHCHECK del contenedor Docker)
+@app.get("/health", tags=["Sistema"], summary="Comprobar que la API está viva")
+def health():
+    return {"status": "ok"}
+
+
 #Control de errores
 # Los errores de negocio del servicio se traducen a códigos HTTP con un formato
 # único: {"detail": "mensaje"} (el mismo que usa FastAPI en sus errores 404/422).

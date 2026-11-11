@@ -1,0 +1,33 @@
+# Control de versiones
+.git
+.gitignore
+.github
+
+# Python: cachés y entornos virtuales
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Secretos y configuración local
+.env
+.env.*
+
+# IDEs y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Ficheros que no hacen falta dentro de la imagen
+Dockerfile
+.dockerignore
+docker-compose*.yml
+README.md
+*.md
+*.zip
